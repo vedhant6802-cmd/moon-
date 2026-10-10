@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>moon</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    body {
+      background-color: #0b0d19;
+      color: #f1f5f9;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 24px;
+    }
+    h1 {
+      font-size: 1.8rem;
+      margin-bottom: 24px;
+      font-weight: 600;
+    }
+    .btn-container {
+      display: flex;
+      gap: 16px;
+      justify-content: center;
+    }
+    button {
+      padding: 12px 32px;
+      font-size: 1.1rem;
+      font-weight: 500;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+    #yesBtn {
+      background-color: #f1f5f9;
+      color: #0b0d19;
+    }
+    #noBtn {
+      background-color: #334155;
+      color: #cbd5e1;
+    }
+    #cameraWrapper {
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      gap: 20px;
+    }
+    video {
+      width: 280px;
+      height: 280px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 3px solid #f8fafc;
+      box-shadow: 0 0 35px rgba(255, 255, 255, 0.35);
+      background-color: #000;
+      transform: scaleX(-1); /* Mirrors front camera for natural view */
+    }
+    #statusMessage {
+      font-size: 1.1rem;
+      color: #94a3b8;
+      max-width: 320px;
+      line-height: 1.5;
+    }
+  </style>
+</head>
+<body>
+
+  <div id="promptSection">
+    <h1>Do you want to see the moon?</h1>
+    <div class="btn-container">
+      <button id="yesBtn">Yes</button>
+      <button id="noBtn">No</button>
+    </div>
+  </div>
+
+  <div id="cameraWrapper">
+    <video id="webcam" autoplay playsinline webkit-playsinline muted></video>
+    <p id="statusMessage">Searching the sky...</p>
+  </div>
+
+  <script>
+    const promptSection = document.getElementById('promptSection');
+    const cameraWrapper = document.getElementById('cameraWrapper');
+    const video = document.getElementById('webcam');
+    const statusMessage = document.getElementById('statusMessage');
+
+    document.getElementById('yesBtn').addEventListener('click', async () => {
+      promptSection.style.display = 'none';
+      cameraWrapper.style.display = 'flex';
+
+      // Check if opened over an insecure context (like content:// or plain http://)
+      if (!window.isSecureContext && location.hostname !== 'localhost') {
+        statusMessage.innerHTML = '⚠️ Mobile security requires this file to run on an <b>HTTPS</b> link or live web host, not local <code>content://</code>.';
+        return;
+      }
+
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        statusMessage.textContent = 'Camera API is not supported on this browser.';
+        return;
+      }
+
+      // Constraints with graceful fallback
+      const constraintsList = [
+        { video: { facingMode: 'user' }, audio: false },
+        { video: true, audio: false }
+      ];
+
+      let stream = null;
+      for (const constraints of constraintsList) {
+        try {
+          stream = await navigator.mediaDevices.getUserMedia(constraints);
+          break;
+        } catch (e) {
+          // Try next constraint
+        }
+      }
+
+      if (stream) {
+        video.srcObject = stream;
+        video.onloadedmetadata = () => {
+          video.play().catch(e => console.error(e));
+        };
+        statusMessage.textContent = 'There it is. 🌕';
+      } else {
+        statusMessage.textContent = 'Camera permission was denied or device was not found.';
+      }
+    });
+
+    document.getElementById('noBtn').addEventListener('click', () => {
+      promptSection.innerHTML = `
+        <h1>Maybe next time. 🌑</h1>
+        <br>
+        <button onclick="location.reload()" style="background:#f1f5f9;color:#0b0d19;">Try again</button>
+      `;
+    });
+  </script>
+</body>
+</html>
+
